@@ -1,0 +1,60 @@
+services:
+    kruase-database:
+        container_name: ${POSTGRES_HOST}
+        ports:
+            - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+        environment:
+            POSTGRES_DB: ${POSTGRES_DB}
+            POSTGRES_USER: ${POSTGRES_USER}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+        image: postgres:16-alpine
+        healthcheck:
+            test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+            start_period: 5s
+        volumes:
+            - kruase-database:/var/lib/postgresql/data
+        networks:
+            - kruase-network
+        restart: always
+
+    kruase-backend:
+        container_name: kruase-backend
+        build: ./
+        environment:
+            POSTGRES_HOST: ${POSTGRES_HOST}
+            POSTGRES_PORT: ${POSTGRES_PORT}
+            POSTGRES_DB: ${POSTGRES_DB}
+            POSTGRES_USER: ${POSTGRES_USER}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+        depends_on:
+            kruase-database:
+                condition: service_healthy
+        volumes:
+            - kruase-file-storage:/app/storage
+        networks:
+            - kruase-network
+        restart: always
+
+    ngrok:
+        container_name: kruase-ngrok
+        image: ngrok/ngrok:alpine
+        ports:
+            - "4040:4040"
+        environment:
+            NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+        command: [ "http", "kruase-backend:8000", "--url=${NGROK_URL}" ]
+        depends_on:
+            - kruase-backend
+        networks:
+            - kruase-network
+        restart: always
+
+volumes:
+    kruase-database:
+    kruase-file-storage:
+
+networks:
+    kruase-network:
