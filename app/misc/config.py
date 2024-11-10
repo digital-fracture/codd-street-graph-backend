@@ -16,3 +16,7 @@ POSTGRES_URL = (
 
 storage_dir = Path("storage")
 storage_dir.mkdir(parents=True, exist_ok=True)
+
+
+default_position = (55.929561, 37.521233)  # MIPT
+default_max_flow = 800

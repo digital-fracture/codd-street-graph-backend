@@ -6,7 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from data import schemas
 from data.database import create_database, close_database
-from logic.handlers import handle_upload, handle_regenerate, _sample_nodes, _old_nodes, _buildings
+from logic.handlers import (
+    handle_upload, handle_regenerate, _history
+)
 
 
 # noinspection PyUnusedLocal
@@ -46,7 +48,7 @@ async def graph(
         file: UploadFile,
         user_id: UUID = Body(embed=True),
         year: int = Body(embed=True, gt=0)
-) -> schemas.StreetGraph:
+) -> schemas.StreetGraphPair:
     return await handle_upload(file, user_id, year)
 
 
@@ -61,10 +63,8 @@ async def graph_regenerate(
 
 @router.post("/uploads")
 async def uploads(user_id: UUID = Body(embed=True)) -> schemas.GraphHistory:
-    old_graph = schemas.StreetGraph(nodes=_old_nodes, buildings=_buildings, year=2022)
-    normal_graph = schemas.StreetGraph(nodes=_sample_nodes, buildings=_buildings, year=2023)
-
-    return schemas.GraphHistory(graphs=[old_graph, normal_graph])
+    # return schemas.GraphHistory(graphs=[])
+    return _history
 
 
 app.include_router(router, prefix="/api/v1", tags=["graphs"])
